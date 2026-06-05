@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Google Sans', Roboto, Arial, sans-serif;
+      font-size: 13px; color: #202124; background: #f1f3f4;
+    }
+
+    /* ---- Tabs ---- */
+    .tabs {
+      display: flex; background: #fff;
+      border-bottom: 2px solid #e0e0e0; overflow-x: auto;
+    }
+    .tab {
+      padding: 12px 16px; cursor: pointer; white-space: nowrap;
+      font-weight: 500; color: #5f6368; border-bottom: 3px solid transparent;
+      margin-bottom: -2px; transition: color .15s;
+    }
+    .tab:hover { color: #1a73e8; background: #f8f9fa; }
+    .tab.active { color: #1a73e8; border-color: #1a73e8; }
+
+    /* ---- Panels ---- */
+    .panel { display: none; padding: 16px; }
+    .panel.active { display: block; }
+
+    /* ---- Form elements ---- */
+    .field { margin-bottom: 14px; }
+    label { display: block; font-size: 11px; font-weight: 700; color: #5f6368; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .4px; }
+    input[type=text], input[type=number], textarea {
+      width: 100%; border: 1.5px solid #dadce0; border-radius: 6px;
+      padding: 8px 10px; font-size: 13px; color: #202124; background: #fff;
+      transition: border-color .2s; font-family: inherit;
+    }
+    input:focus, textarea:focus { outline: none; border-color: #1a73e8; }
+    textarea { resize: vertical; min-height: 80px; }
+    textarea.code { font-family: 'Courier New', monospace; font-size: 12px; min-height: 120px; }
+
+    /* ---- Buttons ---- */
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    .btn {
+      padding: 8px 16px; border: none; border-radius: 6px;
+      font-size: 13px; font-weight: 500; cursor: pointer; transition: filter .15s;
+    }
+    .btn:hover { filter: brightness(.92); }
+    .btn-primary   { background: #1a73e8; color: #fff; }
+    .btn-secondary { background: #e8f0fe; color: #174ea6; }
+    .btn-danger    { background: #fce8e6; color: #c5221f; }
+    .btn-sm        { padding: 5px 10px; font-size: 12px; }
+
+    /* ---- Preview pane ---- */
+    .preview-box {
+      border: 1.5px solid #dadce0; border-radius: 8px;
+      background: #fff; padding: 14px; margin-top: 10px;
+      max-height: 260px; overflow-y: auto;
+    }
+    .preview-subject {
+      font-weight: 700; font-size: 13px; color: #202124;
+      border-bottom: 1px solid #e0e0e0; padding-bottom: 8px; margin-bottom: 10px;
+    }
+
+    /* ---- Variables helper ---- */
+    .vars-panel {
+      background: #fff; border: 1.5px solid #e0e0e0; border-radius: 8px;
+      padding: 12px; margin-bottom: 14px;
+    }
+    .vars-title { font-size: 11px; font-weight: 700; color: #5f6368; text-transform: uppercase; letter-spacing:.4px; margin-bottom: 8px; }
+    .vars-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+    .var-chip {
+      background: #e8f0fe; color: #174ea6; border-radius: 12px;
+      padding: 3px 9px; font-size: 11px; font-weight: 600; cursor: pointer;
+      border: none; transition: background .15s;
+    }
+    .var-chip:hover { background: #d2e3fc; }
+
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
+      background: #202124; color: #fff; padding: 8px 18px; border-radius: 20px;
+      font-size: 12px; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 999;
+    }
+    .toast.show { opacity: 1; }
+
+    /* ---- Signature preview ---- */
+    .sig-preview { border: 1.5px solid #dadce0; border-radius: 8px; background: #fff; padding: 14px; margin-top: 10px; }
+
+    /* ---- Delays row ---- */
+    .delays-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .delay-card { background: #fff; border-radius: 10px; padding: 14px; border: 1.5px solid #e0e0e0; }
+    .delay-card label { margin-bottom: 6px; }
+
+    .section-card { background: #fff; border-radius: 10px; padding: 14px; margin-bottom: 12px; border: 1.5px solid #e0e0e0; }
+    .card-title { font-size: 13px; font-weight: 600; margin-bottom: 12px; color: #202124; }
+  </style>
+</head>
+<body>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active"  onclick="switchTab('general')">⚙️ Général</div>
+    <div class="tab"         onclick="switchTab('initial')">📨 Email initial</div>
+    <div class="tab"         onclick="switchTab('relance1')">🔁 Relance 1</div>
+    <div class="tab"         onclick="switchTab('relance2')">🔂 Relance 2</div>
+    <div class="tab"         onclick="switchTab('signature')">✍️ Signature</div>
+  </div>
+
+  <!-- ============================================================
+       Panel : Général
+  ============================================================ -->
+  <div class="panel active" id="panel-general">
+
+    <div class="section-card">
+      <div class="card-title">👤 Informations sur l'expéditeur</div>
+      <div class="field">
+        <label>Nom complet (prénom + nom)</label>
+        <input type="text" id="nom_expediteur" placeholder="ex. Sophie Martin">
+      </div>
+      <div class="field">
+        <label>Téléphone</label>
+        <input type="text" id="mon_telephone" placeholder="ex. 06 12 34 56 78">
+      </div>
+      <div class="field">
+        <label>URL de ta photo (Dropbox, Drive…)</label>
+        <input type="text" id="ma_photo_url" placeholder="https://www.dropbox.com/s/xxx/photo.jpg?raw=1">
+        <small style="color:#5f6368;font-size:11px;display:block;margin-top:4px">
+          Dropbox : remplace <code>?dl=0</code> par <code>?raw=1</code> pour obtenir un lien direct.
+          Google Drive : utilise <code>https://drive.google.com/uc?export=view&amp;id=ID_DU_FICHIER</code>
+        </small>
+      </div>
+      <div id="photo-preview-wrap" style="display:none;margin-bottom:10px">
+        <img id="photo-preview-img" src="" alt="Aperçu" width="72" height="72"
+             style="border-radius:50%;object-fit:cover;border:2px solid #1a73e8;">
+      </div>
+    </div>
+
+    <div class="delays-row">
+      <div class="delay-card">
+        <label>Délai avant Relance 1 (jours)</label>
+        <input type="number" id="relance1_jours" min="1" max="30" value="7">
+        <small style="color:#5f6368;font-size:11px;display:block;margin-top:4px">Après l'envoi initial</small>
+      </div>
+      <div class="delay-card">
+        <label>Délai avant Relance 2 (jours)</label>
+        <input type="number" id="relance2_jours" min="1" max="60" value="14">
+        <small style="color:#5f6368;font-size:11px;display:block;margin-top:4px">Après l'envoi initial</small>
+      </div>
+    </div>
+
+    <div class="btn-row" style="margin-top:14px">
+      <button class="btn btn-primary" onclick="saveAll()">💾 Enregistrer</button>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       Panel : Email initial
+  ============================================================ -->
+  <div class="panel" id="panel-initial">
+    <div class="vars-panel">
+      <div class="vars-title">Variables disponibles — cliquer pour copier</div>
+      <div class="vars-grid" id="vars-initial"></div>
+    </div>
+
+    <div class="field">
+      <label>Objet de l'email</label>
+      <input type="text" id="sujet_initial">
+    </div>
+    <div class="field">
+      <label>Corps de l'email (HTML autorisé)</label>
+      <textarea class="code" id="corps_initial" rows="8"></textarea>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary"   onclick="saveAll()">💾 Enregistrer</button>
+      <button class="btn btn-secondary" onclick="showPreview('initial')">👁 Aperçu</button>
+      <button class="btn btn-danger btn-sm" onclick="resetTemplate('initial')">↺ Réinitialiser</button>
+    </div>
+
+    <div id="preview-initial" style="display:none">
+      <div class="preview-box">
+        <div class="preview-subject" id="prev-subj-initial"></div>
+        <div id="prev-body-initial"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       Panel : Relance 1
+  ============================================================ -->
+  <div class="panel" id="panel-relance1">
+    <div class="vars-panel">
+      <div class="vars-title">Variables disponibles — cliquer pour copier</div>
+      <div class="vars-grid" id="vars-relance1"></div>
+    </div>
+
+    <div class="field">
+      <label>Objet de l'email</label>
+      <input type="text" id="sujet_relance1">
+    </div>
+    <div class="field">
+      <label>Corps de l'email (HTML autorisé)</label>
+      <textarea class="code" id="corps_relance1" rows="8"></textarea>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary"   onclick="saveAll()">💾 Enregistrer</button>
+      <button class="btn btn-secondary" onclick="showPreview('relance1')">👁 Aperçu</button>
+      <button class="btn btn-danger btn-sm" onclick="resetTemplate('relance1')">↺ Réinitialiser</button>
+    </div>
+
+    <div id="preview-relance1" style="display:none">
+      <div class="preview-box">
+        <div class="preview-subject" id="prev-subj-relance1"></div>
+        <div id="prev-body-relance1"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       Panel : Relance 2
+  ============================================================ -->
+  <div class="panel" id="panel-relance2">
+    <div class="vars-panel">
+      <div class="vars-title">Variables disponibles — cliquer pour copier</div>
+      <div class="vars-grid" id="vars-relance2"></div>
+    </div>
+
+    <div class="field">
+      <label>Objet de l'email</label>
+      <input type="text" id="sujet_relance2">
+    </div>
+    <div class="field">
+      <label>Corps de l'email (HTML autorisé)</label>
+      <textarea class="code" id="corps_relance2" rows="8"></textarea>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary"   onclick="saveAll()">💾 Enregistrer</button>
+      <button class="btn btn-secondary" onclick="showPreview('relance2')">👁 Aperçu</button>
+      <button class="btn btn-danger btn-sm" onclick="resetTemplate('relance2')">↺ Réinitialiser</button>
+    </div>
+
+    <div id="preview-relance2" style="display:none">
+      <div class="preview-box">
+        <div class="preview-subject" id="prev-subj-relance2"></div>
+        <div id="prev-body-relance2"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       Panel : Signature
+  ============================================================ -->
+  <div class="panel" id="panel-signature">
+    <div class="vars-panel">
+      <div class="vars-title">Variables disponibles — cliquer pour copier</div>
+      <div class="vars-grid" id="vars-signature"></div>
+    </div>
+
+    <div class="field">
+      <label>Code HTML de la signature</label>
+      <textarea class="code" id="signature" rows="10"></textarea>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary"   onclick="saveAll()">💾 Enregistrer</button>
+      <button class="btn btn-secondary" onclick="showSigPreview()">👁 Aperçu</button>
+      <button class="btn btn-danger btn-sm" onclick="resetSignature()">↺ Réinitialiser</button>
+    </div>
+
+    <div id="sig-preview-box" style="display:none">
+      <div class="sig-preview" id="sig-preview-content"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+  var VARS = [
+    '{sexe}', '{civilité}', '{civilité_court}',
+    '{prénom}', '{nom}', '{email}', '{entreprise}',
+    '{date_envoi}', '{dossier_drive}',
+    '{mon_prenom}', '{mon_nom}', '{mon_email}', '{mon_tel}', '{ma_photo}'
+  ];
+
+  // Populate variable chips in all panels
+  ['initial','relance1','relance2','signature'].forEach(function(p) {
+    var el = document.getElementById('vars-' + p);
+    if (!el) return;
+    VARS.forEach(function(v) {
+      var btn = document.createElement('button');
+      btn.className = 'var-chip';
+      btn.textContent = v;
+      btn.title = 'Cliquer pour copier dans le presse-papier';
+      btn.onclick = function() { copyVar(v); };
+      el.appendChild(btn);
+    });
+  });
+
+  function copyVar(v) {
+    navigator.clipboard.writeText(v).then(function() {
+      toast('📋 Copié : ' + v);
+    });
+  }
+
+  // ---- Tab switching ----
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach(function(t, i) {
+      var names = ['general','initial','relance1','relance2','signature'];
+      t.classList.toggle('active', names[i] === name);
+    });
+    document.querySelectorAll('.panel').forEach(function(p) {
+      p.classList.remove('active');
+    });
+    document.getElementById('panel-' + name).classList.add('active');
+  }
+
+  // ---- Load settings ----
+  function loadSettings() {
+    google.script.run
+      .withSuccessHandler(function(s) {
+        document.getElementById('nom_expediteur').value  = s.nomExpediteur  || '';
+        document.getElementById('mon_telephone').value   = s.monTelephone   || '';
+        document.getElementById('ma_photo_url').value    = s.maPhotoUrl     || '';
+        updatePhotoPreview(s.maPhotoUrl || '');
+        document.getElementById('relance1_jours').value  = s.relance1Jours  || 7;
+        document.getElementById('relance2_jours').value  = s.relance2Jours  || 14;
+        document.getElementById('sujet_initial').value   = s.sujetInitial   || '';
+        document.getElementById('corps_initial').value   = s.corpsInitial   || '';
+        document.getElementById('sujet_relance1').value  = s.sujetRelance1  || '';
+        document.getElementById('corps_relance1').value  = s.corpsRelance1  || '';
+        document.getElementById('sujet_relance2').value  = s.sujetRelance2  || '';
+        document.getElementById('corps_relance2').value  = s.corpsRelance2  || '';
+        document.getElementById('signature').value       = s.signature      || '';
+      })
+      .withFailureHandler(function(e) { toast('❌ ' + e.message); })
+      .getAllSettings();
+  }
+
+  // ---- Save all ----
+  function saveAll() {
+    var data = {
+      nomExpediteur: document.getElementById('nom_expediteur').value,
+      monTelephone:  document.getElementById('mon_telephone').value,
+      maPhotoUrl:    document.getElementById('ma_photo_url').value,
+      relance1Jours: parseInt(document.getElementById('relance1_jours').value) || 7,
+      relance2Jours: parseInt(document.getElementById('relance2_jours').value) || 14,
+      sujetInitial:  document.getElementById('sujet_initial').value,
+      corpsInitial:  document.getElementById('corps_initial').value,
+      sujetRelance1: document.getElementById('sujet_relance1').value,
+      corpsRelance1: document.getElementById('corps_relance1').value,
+      sujetRelance2: document.getElementById('sujet_relance2').value,
+      corpsRelance2: document.getElementById('corps_relance2').value,
+      signature:     document.getElementById('signature').value,
+    };
+    google.script.run
+      .withSuccessHandler(function() { toast('✅ Paramètres enregistrés !'); })
+      .withFailureHandler(function(e) { toast('❌ ' + e.message); })
+      .saveAllSettings(data);
+  }
+
+  // ---- Preview email ----
+  function showPreview(type) {
+    var sampleData = {
+      sexe: 'Mme', prenom: 'Julie', nom: 'Directrice',
+      email: 'julie@entreprise.fr', entreprise: 'Tech Corp',
+    };
+    google.script.run
+      .withSuccessHandler(function(p) {
+        document.getElementById('prev-subj-' + type).textContent = p.subject;
+        document.getElementById('prev-body-' + type).innerHTML   = p.body;
+        document.getElementById('preview-' + type).style.display = 'block';
+      })
+      .withFailureHandler(function(e) { toast('❌ ' + e.message); })
+      .previewEmail(type, sampleData);
+  }
+
+  function showSigPreview() {
+    var html = document.getElementById('signature').value;
+    var replaced = html
+      .split('{mon_prenom}').join(document.getElementById('nom_expediteur').value.split(' ')[0] || 'Prénom')
+      .split('{mon_nom}').join(document.getElementById('nom_expediteur').value.split(' ').slice(1).join(' ') || 'Nom')
+      .split('{mon_email}').join('moi@exemple.fr')
+      .split('{mon_tel}').join(document.getElementById('mon_telephone').value || '06 00 00 00 00');
+    document.getElementById('sig-preview-content').innerHTML = replaced;
+    document.getElementById('sig-preview-box').style.display = 'block';
+  }
+
+  // ---- Reset to defaults ----
+  function resetTemplate(type) {
+    if (!confirm('Réinitialiser le modèle "' + type + '" avec les valeurs par défaut ?')) return;
+    google.script.run
+      .withSuccessHandler(function(defs) {
+        if (type === 'initial') {
+          document.getElementById('sujet_initial').value = defs.initial.subject;
+          document.getElementById('corps_initial').value = defs.initial.body;
+        } else if (type === 'relance1') {
+          document.getElementById('sujet_relance1').value = defs.relance1.subject;
+          document.getElementById('corps_relance1').value = defs.relance1.body;
+        } else if (type === 'relance2') {
+          document.getElementById('sujet_relance2').value = defs.relance2.subject;
+          document.getElementById('corps_relance2').value = defs.relance2.body;
+        }
+        toast('↺ Modèle réinitialisé');
+      })
+      .withFailureHandler(function(e) { toast('❌ ' + e.message); })
+      .getDefaultTemplates();
+  }
+
+  function resetSignature() {
+    if (!confirm('Réinitialiser la signature par défaut ?')) return;
+    google.script.run
+      .withSuccessHandler(function(defs) {
+        document.getElementById('signature').value = defs.signature;
+        toast('↺ Signature réinitialisée');
+      })
+      .withFailureHandler(function(e) { toast('❌ ' + e.message); })
+      .getDefaultTemplates();
+  }
+
+  // ---- Toast ----
+  function updatePhotoPreview(url) {
+    var wrap = document.getElementById('photo-preview-wrap');
+    var img  = document.getElementById('photo-preview-img');
+    if (url && url.trim()) {
+      img.src = url.trim();
+      wrap.style.display = 'block';
+    } else {
+      wrap.style.display = 'none';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var photoInput = document.getElementById('ma_photo_url');
+    if (photoInput) {
+      photoInput.addEventListener('input', function() {
+        updatePhotoPreview(this.value);
+      });
+    }
+  });
+
+  function toast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(function() { t.classList.remove('show'); }, 3000);
+  }
+
+  loadSettings();
+</script>
+</body>
+</html>
